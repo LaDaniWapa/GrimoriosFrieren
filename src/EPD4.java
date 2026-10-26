@@ -71,7 +71,7 @@ public class EPD4 {
     /**
      * Calcula un indice especifico al multiplicar de dos matrices
      *
-     * @param size ??? no se como llamarlo, es a[0].length y b.length que son iguales
+     * @param size Es el size comun que comparten ambas matrices para poder ser multiplicadas (3x'2' * '2'x4)
      * @param a    Matriz A
      * @param b    Matriz B
      * @return C_{c, f} = A{f, size} * B{c, size} + A{f, size-1} * B{c, size-1} + ...
@@ -94,6 +94,7 @@ public class EPD4 {
 
     /**
      * Multiplica dos matrices
+     *
      * @param a Matriz A
      * @param b Matriz B
      * @return A x B
@@ -115,8 +116,51 @@ public class EPD4 {
         return matriz;
     }
 
+    /**
+     * Multiplica dos matrices
+     *
+     * @param a Matriz A
+     * @param b Matriz B
+     * @return A x B
+     */
     public static int[][] multiplicarMatricesREC(int[][] a, int[][] b) {
-        return new int[0][0];
+        // la primera debe tener el mismo numero de columnas que filas la segunda
+        if (a[0].length != b.length) return null;
+        int[][] matriz = new int[a.length][b[0].length];
+
+        multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0, b.length);
+
+        return matriz;
+    }
+
+    /**
+     * Funcion wrapped que verdaderamente multiplica dos matrices de manera recursiva
+     *
+     * @param m    Matriz sobre la que trabajar
+     * @param a    Matriz A
+     * @param b    Matriz B
+     * @param bT   Matriz B traspuesta
+     * @param f    Fila
+     * @param c    Columna
+     * @param size Es el size comun que comparten ambas matrices para poder ser multiplicadas (3x'2' * '2'x4)
+     */
+    private static void multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c, int size) {
+        // Si nos quedamos sin filas, terminamos
+        if (f >= a.length) return;
+
+        // Si nos quedamos sin columnas, pasamos a la siguiente fila
+        if (c >= b[0].length) {
+            f++;
+            c = 0;
+            multiplicarMatricesREC(m, a, b, bT, f, c, size);
+            return;
+        }
+
+        // Actualizar los valores de la matriz original
+        m[f][c] = calcularIndice(size, a[f], bT[c]);
+
+        // Calcular siguiente elemento
+        multiplicarMatricesREC(m, a, b, bT, f, c + 1, size);
     }
 
     // ----------------------------- [ MULTIPLICAR MATRICES ] ------------------------------------
@@ -135,11 +179,13 @@ public class EPD4 {
         };
 
         int[][] c = multiplicarMatricesIT(a, b);
+        int[][] d = multiplicarMatricesREC(a, b);
 
         imprimirMatriz(a);
         System.out.println("---------------------------");
         imprimirMatriz(b);
         System.out.println("---------------------------");
         imprimirMatriz(c);
+        imprimirMatriz(d);
     }
 }
