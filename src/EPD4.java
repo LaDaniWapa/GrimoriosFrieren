@@ -1,12 +1,18 @@
 import java.util.Random;
 
 public class EPD4 {
-    // ----------------------------- [ METODOS AYUDA ] ------------------------------------
+    // -------------------------------- [ METODOS AYUDA ] ----------------------------------------
 
     /**
      * Objeto reutilizable para generar numeros aletorios
      */
     private static final Random RAND = new Random();
+
+    /**
+     * Numero de iteraciones para calcular la media de tiempo que tarda una funcion
+     */
+    private static final int ITERACIONES = 5;
+
 
     /**
      * Imprime una matriz tabulada en la terminal
@@ -61,7 +67,8 @@ public class EPD4 {
 
         for (int i = 0; i < f; i++) {
             for (int j = 0; j < c; j++) {
-                matriz[i][j] = RAND.nextInt();
+                // LLenar la matriz con numeros entre 0 y 999
+                matriz[i][j] = RAND.nextInt(1000);
             }
         }
 
@@ -84,7 +91,8 @@ public class EPD4 {
 
         return res;
     }
-    // ----------------------------- [ METODOS AYUDA ] ------------------------------------
+
+    // -------------------------------- [ METODOS AYUDA ] ----------------------------------------
 
 
     // ----------------------------- [ MULTIPLICAR MATRICES ] ------------------------------------
@@ -128,7 +136,7 @@ public class EPD4 {
         if (a[0].length != b.length) return null;
         int[][] matriz = new int[a.length][b[0].length];
 
-        multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0, b.length);
+        p_multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0, b.length);
 
         return matriz;
     }
@@ -144,7 +152,7 @@ public class EPD4 {
      * @param c    Columna
      * @param size Es el size comun que comparten ambas matrices para poder ser multiplicadas (3x'2' * '2'x4)
      */
-    private static void multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c, int size) {
+    private static void p_multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c, int size) {
         // Si nos quedamos sin filas, terminamos
         if (f >= a.length) return;
 
@@ -152,7 +160,7 @@ public class EPD4 {
         if (c >= b[0].length) {
             f++;
             c = 0;
-            multiplicarMatricesREC(m, a, b, bT, f, c, size);
+            p_multiplicarMatricesREC(m, a, b, bT, f, c, size);
             return;
         }
 
@@ -160,10 +168,71 @@ public class EPD4 {
         m[f][c] = calcularIndice(size, a[f], bT[c]);
 
         // Calcular siguiente elemento
-        multiplicarMatricesREC(m, a, b, bT, f, c + 1, size);
+        p_multiplicarMatricesREC(m, a, b, bT, f, c + 1, size);
     }
 
     // ----------------------------- [ MULTIPLICAR MATRICES ] ------------------------------------
+
+
+    // ------------------------------- [ MEDICION TIEMPOS ] ---------------------------------------
+
+    /**
+     * Calcula el tiempo promedio que tarda la funcion multiplicarMatricesIT en calcular cierto volumen de datos
+     *
+     * @param a Filas de la matriz A
+     * @param b Filas de la matriz B y columnas de la matriz A
+     * @param c Columnas de la matriz B
+     * @return Tiempo promedio
+     * @see multiplicarMatricesIT
+     */
+    private static double calcularMediaTiempoIT(int a, int b, int c) {
+        double sumTiempos = 0;
+
+        for (int i = 0; i < ITERACIONES; i++) {
+            int[][] x = generarMatrizMagica(a, b);
+            int[][] y = generarMatrizMagica(b, c);
+
+            long init = System.nanoTime();
+
+            int[][] res = multiplicarMatricesIT(x, y);
+
+            long end = System.nanoTime();
+
+            sumTiempos += end - init;
+        }
+
+        return sumTiempos / ITERACIONES;
+    }
+
+    /**
+     * Calcula el tiempo promedio que tarda la funcion multiplicarMatricesREC en calcular cierto volumen de datos
+     *
+     * @param a Filas de la matriz A
+     * @param b Filas de la matriz B y columnas de la matriz A
+     * @param c Columnas de la matriz B
+     * @return Tiempo promedio
+     * @see multiplicarMatricesREC
+     */
+    private static double calcularMediaTiempoRec(int a, int b, int c) {
+        double sumTiempos = 0;
+
+        for (int i = 0; i < ITERACIONES; i++) {
+            int[][] x = generarMatrizMagica(a, b);
+            int[][] y = generarMatrizMagica(b, c);
+
+            long init = System.nanoTime();
+
+            int[][] res = multiplicarMatricesREC(x, y);
+
+            long end = System.nanoTime();
+
+            sumTiempos += end - init;
+        }
+
+        return sumTiempos / ITERACIONES;
+    }
+
+    // ------------------------------- [ MEDICION TIEMPOS ] ---------------------------------------
 
 
     public static void main(String[] args) {
