@@ -1,7 +1,7 @@
 import java.util.Random;
 
 public class EPD4 {
-    // -------------------------------- [ METODOS AYUDA ] ----------------------------------------
+    // -------------------------------- [ OBJETOS ESTATICOS ] ----------------------------------------
 
     /**
      * Objeto reutilizable para generar numeros aletorios
@@ -13,6 +13,8 @@ public class EPD4 {
      */
     private static final int ITERACIONES = 5;
 
+
+    // -------------------------------- [ METODOS AYUDA ] ----------------------------------------
 
     /**
      * Imprime una matriz tabulada en la terminal
@@ -108,8 +110,8 @@ public class EPD4 {
      * @return A x B
      */
     public static int[][] multiplicarMatricesIT(int[][] a, int[][] b) {
-        // la primera debe tener el mismo numero de columnas que filas la segunda
-        if (a[0].length != b.length) return null;
+        if (a[0].length != b.length)
+            throw new IllegalArgumentException("A debe tener el mismo numero de columnas que filas B");
 
         int size = b.length;
         int[][] matriz = new int[a.length][b[0].length];
@@ -132,11 +134,11 @@ public class EPD4 {
      * @return A x B
      */
     public static int[][] multiplicarMatricesREC(int[][] a, int[][] b) {
-        // la primera debe tener el mismo numero de columnas que filas la segunda
-        if (a[0].length != b.length) return null;
+        if (a[0].length != b.length)
+            throw new IllegalArgumentException("A debe tener el mismo numero de columnas que filas B");
         int[][] matriz = new int[a.length][b[0].length];
 
-        p_multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0, b.length);
+        p_multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0);
 
         return matriz;
     }
@@ -144,31 +146,28 @@ public class EPD4 {
     /**
      * Funcion wrapped que verdaderamente multiplica dos matrices de manera recursiva
      *
-     * @param m    Matriz sobre la que trabajar
-     * @param a    Matriz A
-     * @param b    Matriz B
-     * @param bT   Matriz B traspuesta
-     * @param f    Fila
-     * @param c    Columna
-     * @param size Es el size comun que comparten ambas matrices para poder ser multiplicadas (3x'2' * '2'x4)
+     * @param m  Matriz sobre la que trabajar
+     * @param a  Matriz A
+     * @param b  Matriz B
+     * @param bT Matriz B traspuesta
+     * @param f  Fila
+     * @param c  Columna
      */
-    private static void p_multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c, int size) {
+    private static void p_multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c) {
         // Si nos quedamos sin filas, terminamos
         if (f >= a.length) return;
 
         // Si nos quedamos sin columnas, pasamos a la siguiente fila
         if (c >= b[0].length) {
-            f++;
-            c = 0;
-            p_multiplicarMatricesREC(m, a, b, bT, f, c, size);
+            p_multiplicarMatricesREC(m, a, b, bT, f + 1, 0);
             return;
         }
 
         // Actualizar los valores de la matriz original
-        m[f][c] = calcularIndice(size, a[f], bT[c]);
+        m[f][c] = calcularIndice(b.length, a[f], bT[c]);
 
         // Calcular siguiente elemento
-        p_multiplicarMatricesREC(m, a, b, bT, f, c + 1, size);
+        p_multiplicarMatricesREC(m, a, b, bT, f, c + 1);
     }
 
     // ----------------------------- [ MULTIPLICAR MATRICES ] ------------------------------------
@@ -201,7 +200,7 @@ public class EPD4 {
             sumTiempos += end - init;
         }
 
-        return sumTiempos / ITERACIONES;
+        return sumTiempos / ITERACIONES / 1_000_000;
     }
 
     /**
@@ -229,32 +228,113 @@ public class EPD4 {
             sumTiempos += end - init;
         }
 
-        return sumTiempos / ITERACIONES;
+        return sumTiempos / ITERACIONES / 1_000_000;
     }
 
     // ------------------------------- [ MEDICION TIEMPOS ] ---------------------------------------
 
 
     public static void main(String[] args) {
-        int[][] a = {
-                {5, 3},
-                {-2, 9},
-                {7, -4}
-        };
+        // ------- [ CALENTAMIENTO ] -------
+        // https://stackoverflow.com/questions/504103/how-do-i-write-a-correct-micro-benchmark-in-java
+        System.out.println("Inicio calentamiento...");
+        for (int i = 0; i < 50; i++) {
+            calcularMediaTiempoIT(128, 128, 128);
+        }
+        for (int i = 0; i < 50; i++) {
+            calcularMediaTiempoRec(60, 60, 60);
+        }
+        System.out.println("Fin calentamiento!");
 
-        int[][] b = {
-                {-2, 8, 5, 3},
-                {5, -6, 7, -7}
-        };
 
-        int[][] c = multiplicarMatricesIT(a, b);
-        int[][] d = multiplicarMatricesREC(a, b);
+        // ----- [ COSTES TEMPORALES IT ] -----
+        int[] sizes = {16, 32, 64, 128, 256, 512, 1024, 2048}; // 4096
 
-        imprimirMatriz(a);
-        System.out.println("---------------------------");
-        imprimirMatriz(b);
-        System.out.println("---------------------------");
-        imprimirMatriz(c);
-        imprimirMatriz(d);
+        // Cuadradas
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, s, s));
+            } catch (StackOverflowError e) {
+                System.out.printf("%4d,error%n", s);
+            }
+        }
+
+        // Rectangulares
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, s / 2, s));
+            } catch (StackOverflowError e) {
+                System.out.printf("%4d,error%n", s);
+            }
+        }
+
+        // Spaghetti
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, 16, s));
+            } catch (StackOverflowError e) {
+                System.out.printf("%d,error%n", s);
+            }
+        }
+
+        // Cuadradas y Rectangulares
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, s, s * 2));
+            } catch (StackOverflowError e) {
+                System.out.printf("%4d,error%n", s);
+            }
+        }
+
+
+        // ----- [ COSTES TEMPORALES REC ] -----
+        // Cuadradas
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, s, s));
+            } catch (StackOverflowError e) {
+                System.out.printf("%4d,error%n", s);
+                break;
+            }
+        }
+
+        // Rectangulares
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, s / 2, s));
+            } catch (StackOverflowError e) {
+                System.out.printf("%4d,error%n", s);
+                break;
+            }
+        }
+
+        // Spaghetti
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, 16, s));
+            } catch (StackOverflowError e) {
+                System.out.printf("%4d,error%n", s);
+                break;
+            }
+        }
+
+        // Cuadradas y Rectangulares
+        System.out.println("\nSize,Tiempo_ms");
+        for (int s : sizes) {
+            try {
+                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, s, s * 2));
+            } catch (StackOverflowError e) {
+                System.out.printf("%4d,error%n", s);
+                break;
+            }
+        }
+
     }
 }
