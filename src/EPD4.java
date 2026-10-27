@@ -94,6 +94,24 @@ public class EPD4 {
         return res;
     }
 
+    private static void medirIT(int m, int n, int p) {
+        try {
+            double t = calcularMediaTiempoIT(m, n, p);
+            System.out.printf("%dx%d * %dx%d,%.4f%n", m, n, n, p, t);
+        } catch (StackOverflowError e) {
+            System.out.printf("%dx%d * %dx%d,error%n", m, n, n, p);
+        }
+    }
+
+    private static void medirRec(int m, int n, int p) {
+        try {
+            double t = calcularMediaTiempoRec(m, n, p);
+            System.out.printf("%dx%d * %dx%d,%.4f%n", m, n, n, p, t);
+        } catch (StackOverflowError e) {
+            System.out.printf("%dx%d * %dx%d,error%n", m, n, n, p);
+        }
+    }
+
     // -------------------------------- [ METODOS AYUDA ] ----------------------------------------
 
 
@@ -138,7 +156,7 @@ public class EPD4 {
             throw new IllegalArgumentException("A debe tener el mismo numero de columnas que filas B");
         int[][] matriz = new int[a.length][b[0].length];
 
-        p_multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0);
+        p_multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0, 0);
 
         return matriz;
     }
@@ -153,21 +171,26 @@ public class EPD4 {
      * @param f  Fila
      * @param c  Columna
      */
-    private static void p_multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c) {
+    private static void p_multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c, int k) {
         // Si nos quedamos sin filas, terminamos
         if (f >= a.length) return;
 
         // Si nos quedamos sin columnas, pasamos a la siguiente fila
         if (c >= b[0].length) {
-            p_multiplicarMatricesREC(m, a, b, bT, f + 1, 0);
+            p_multiplicarMatricesREC(m, a, b, bT, f + 1, 0, 0);
+            return;
+        }
+
+        if (k >= b.length) {
+            p_multiplicarMatricesREC(m, a, b, bT, f, c + 1, 0);
             return;
         }
 
         // Actualizar los valores de la matriz original
-        m[f][c] = calcularIndice(b.length, a[f], bT[c]);
+        m[f][c] += a[f][k] * bT[c][k];
 
         // Calcular siguiente elemento
-        p_multiplicarMatricesREC(m, a, b, bT, f, c + 1);
+        p_multiplicarMatricesREC(m, a, b, bT, f, c, k + 1);
     }
 
     // ----------------------------- [ MULTIPLICAR MATRICES ] ------------------------------------
@@ -238,103 +261,48 @@ public class EPD4 {
         // ------- [ CALENTAMIENTO ] -------
         // https://stackoverflow.com/questions/504103/how-do-i-write-a-correct-micro-benchmark-in-java
         System.out.println("Inicio calentamiento...");
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 100; i++) {
             calcularMediaTiempoIT(128, 128, 128);
-        }
-        for (int i = 0; i < 50; i++) {
-            calcularMediaTiempoRec(60, 60, 60);
         }
         System.out.println("Fin calentamiento!");
 
 
         // ----- [ COSTES TEMPORALES IT ] -----
-        int[] sizes = {16, 32, 64, 128, 256, 512, 1024, 2048}; // 4096
+        int[] sizes = {16, 32, 64, 128, 256, 512, 1024, 2048};
+        String cabecera = "\nSize,Tiempo_ms";
 
         // Cuadradas
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, s, s));
-            } catch (StackOverflowError e) {
-                System.out.printf("%4d,error%n", s);
-            }
-        }
+        System.out.println(cabecera);
+        for (int s : sizes) medirIT(s, s, s);
 
         // Rectangulares
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, s / 2, s));
-            } catch (StackOverflowError e) {
-                System.out.printf("%4d,error%n", s);
-            }
-        }
+        System.out.println(cabecera);
+        for (int s : sizes) medirIT(s, s / 2, s);
 
         // Spaghetti
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, 16, s));
-            } catch (StackOverflowError e) {
-                System.out.printf("%d,error%n", s);
-            }
-        }
+        System.out.println(cabecera);
+        for (int s : sizes) medirIT(s, 16, s);
 
-        // Cuadradas y Rectangulares
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoIT(s, s, s * 2));
-            } catch (StackOverflowError e) {
-                System.out.printf("%4d,error%n", s);
-            }
-        }
+        // Cuadrada * rectangular
+        System.out.println(cabecera);
+        for (int s : sizes) medirIT(s, s, 2 * s);
 
 
         // ----- [ COSTES TEMPORALES REC ] -----
         // Cuadradas
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, s, s));
-            } catch (StackOverflowError e) {
-                System.out.printf("%4d,error%n", s);
-                break;
-            }
-        }
+        System.out.println(cabecera);
+        for (int s : sizes) medirRec(s, s, s);
 
         // Rectangulares
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, s / 2, s));
-            } catch (StackOverflowError e) {
-                System.out.printf("%4d,error%n", s);
-                break;
-            }
-        }
+        System.out.println(cabecera);
+        for (int s : sizes) medirRec(s, s / 2, s);
 
         // Spaghetti
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, 16, s));
-            } catch (StackOverflowError e) {
-                System.out.printf("%4d,error%n", s);
-                break;
-            }
-        }
+        System.out.println(cabecera);
+        for (int s : sizes) medirRec(s, 16, s);
 
-        // Cuadradas y Rectangulares
-        System.out.println("\nSize,Tiempo_ms");
-        for (int s : sizes) {
-            try {
-                System.out.printf("%4d,%.4f%n", s, calcularMediaTiempoRec(s, s, s * 2));
-            } catch (StackOverflowError e) {
-                System.out.printf("%4d,error%n", s);
-                break;
-            }
-        }
-
+        // Cuadrada * rectangular
+        System.out.println(cabecera);
+        for (int s : sizes) medirRec(s, s, 2 * s);
     }
 }
