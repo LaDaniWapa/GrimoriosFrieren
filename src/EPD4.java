@@ -49,7 +49,7 @@ public class EPD4 {
         System.out.println("Size,TiempoIterativo,TiempoRecursivo");
 
         for (Fila f : filas)
-            System.out.printf("%s, %.4f, %.4f", f.size(), f.tiempoIterativo(), f.tiempoRecursivo());
+            System.out.printf("%s, %.4f, %.4f%n", f.size(), f.tiempoIterativo(), f.tiempoRecursivo());
     }
 
     /**
@@ -354,30 +354,35 @@ public class EPD4 {
         // https://stackoverflow.com/questions/504103/how-do-i-write-a-correct-micro-benchmark-in-java
         // Rule 1 y 5
         System.out.println("Inicio calentamiento...");
-        for (int i = 0; i < 100; i++)
-            calcularMediaTiempoIT(512, 512, 512);
+        for (int i = 0; i < 50; i++)
+            calcularMediaTiempoIT(256, 256, 256);
 
-        for (int i = 0; i < 100; i++)
-            calcularMediaTiempoRec(512, 512, 512);
+        for (int i = 0; i < 50; i++)
+            calcularMediaTiempoRec(256, 256, 256);
 
         System.out.println("Fin calentamiento!");
 
 
         // ----- [ COSTES TEMPORALES ] -----
-        int[] sizes = {16, 32, 64, 128, 256, 512, 1024, 2048};
-        String cabecera = "\nSize,TiempoIterativo,TiempoRecursivo";
+        int[] sizes = {16, 32, 64, 128, 256, 512, 1024};
 
         List<Fila> cuadradas = new ArrayList<>(sizes.length);
         List<Fila> rectangulares = new ArrayList<>(sizes.length);
         List<Fila> spaghetti = new ArrayList<>(sizes.length);
         List<Fila> cuadradaRect = new ArrayList<>(sizes.length);
 
+        System.out.println("Calculando...");
+        int i = 0;
         for (int s : sizes) {
             cuadradas.add(medir(s, s, s));
             rectangulares.add(medir(s, s / 2, s));
             spaghetti.add(medir(s, 16, s));
             cuadradaRect.add(medir(s, s, s * 2));
+
+            System.out.printf("%d/%d OK%n", i++, sizes.length);
         }
+
+        System.out.println("\n\n---[ RESULTADO ]---");
 
         imprimirCSV("Cuadradas", cuadradas);
         imprimirCSV("Rectangulares", rectangulares);
