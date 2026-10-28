@@ -119,7 +119,7 @@ public class EPD4 {
      * Mide el tiempo en calcular dos matrices AxB * BxC
      */
     private static Fila medir(int a, int b, int c) {
-        String size = String.format("%dx%d * %dx%d", a, b, b, c);
+        String size = String.format("%dx%d * %dx%d", a, b, b, c); // AxB * BxC
 
         double tiempoIT = 0;
         double tiempoREC = 0;
@@ -130,12 +130,14 @@ public class EPD4 {
             int[][] x = generarMatrizMagica(a, b);
             int[][] y = generarMatrizMagica(b, c);
 
+            // Medir tiempo de la funcion iterativa
             long inicio = System.nanoTime();
             multiplicarMatricesIT(x, y);
             long fin = System.nanoTime();
 
             tiempoIT += fin - inicio;
 
+            // Medir tiempo de la funcion recursiva
             if (!stackOverflow) {
                 try {
                     inicio = System.nanoTime();
@@ -149,12 +151,14 @@ public class EPD4 {
             }
         }
 
+        // Calcular media y pasar a ms
         double mediaIT = tiempoIT / ITERACIONES / 1_000_000;
 
         double mediaREC = 0.0;
         if (stackOverflow) {
             mediaREC = Double.NaN;
         } else {
+            // Calcular media y pasar a ms
             mediaREC = tiempoREC / ITERACIONES / 1_000_000;
         }
 
@@ -329,7 +333,7 @@ public class EPD4 {
     // https://stackoverflow.com/questions/504103/how-do-i-write-a-correct-micro-benchmark-in-java
     // Rule 1 y 5
     private static void calentamiento() {
-        System.out.println("Inicio calentamiento...");
+        System.out.println("\nInicio calentamiento...");
 
         // Calentamiento progresivo con diferentes dimensiones
         int[] sizes = {16, 32, 64, 128, 256};
@@ -351,32 +355,53 @@ public class EPD4 {
 
     public static void main(String[] args) {
 
+        System.out.println("Matrices de ejemplo");
+
+        int[][] a = {
+                {5, 3},
+                {-2, 9},
+                {7, -4}
+        };
+
+        int[][] b = {
+                {-2, 8, 5, 3},
+                {5, -6, 7, -7}
+        };
+
+        System.out.println("Matriz A:");
+        imprimirMatriz(a);
+        System.out.println("Matriz B:");
+        imprimirMatriz(b);
+
+        System.out.println("Resultado AxB:");
+        imprimirMatriz(multiplicarMatricesIT(a, b));
+
         calentamiento();
 
         // ----- [ COSTES TEMPORALES ] -----
-        int[] sizes = {16, 32, 64, 128, 256, 512, 1024};
+        int[] sizes = {96, 128, 192, 256, 384, 512, 640, 768, 896, 1024};
 
-        List<Fila> cuadradas = new ArrayList<>(sizes.length);
-        List<Fila> rectangulares = new ArrayList<>(sizes.length);
-        List<Fila> spaghetti = new ArrayList<>(sizes.length);
+//        List<Fila> cuadradas = new ArrayList<>(sizes.length);
+//        List<Fila> rectangulares = new ArrayList<>(sizes.length);
+//        List<Fila> spaghetti = new ArrayList<>(sizes.length);
         List<Fila> cuadradaRect = new ArrayList<>(sizes.length);
 
-        System.out.println("Calculando...");
+        System.out.println("\nCalculando...");
         int i = 0;
         for (int s : sizes) {
-            cuadradas.add(medir(s, s, s));
-            rectangulares.add(medir(s, s / 2, s));
-            spaghetti.add(medir(s, 16, s));
+//            cuadradas.add(medir(s, s, s));
+//            rectangulares.add(medir(s, s / 2, s));
+//            spaghetti.add(medir(s, 16, s));
             cuadradaRect.add(medir(s, s, s * 2));
 
             System.out.printf("%d/%d OK%n", ++i, sizes.length);
         }
 
-        System.out.println("\n\n---[ RESULTADO ]---");
+        System.out.println("\n---[ RESULTADO ]---");
 
-        imprimirCSV("Cuadradas", cuadradas);
-        imprimirCSV("Rectangulares", rectangulares);
-        imprimirCSV("Spaghetti", spaghetti);
+//        imprimirCSV("Cuadradas", cuadradas);
+//        imprimirCSV("Rectangulares", rectangulares);
+//        imprimirCSV("Spaghetti", spaghetti);
         imprimirCSV("Cuadrada x Rectangular", cuadradaRect);
     }
 }
