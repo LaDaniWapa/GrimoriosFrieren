@@ -1,4 +1,9 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
+record Fila(String size, double tiempoIterativo, double tiempoRecursivo) {
+}
 
 public class EPD4 {
     // -------------------------------- [ OBJETOS ESTATICOS ] ----------------------------------------
@@ -29,7 +34,7 @@ public class EPD4 {
 
         System.out.println("[");
         for (int f = 0; f < m.length; f++) {
-            System.out.printf("\t{ ");
+            System.out.print("\t{ ");
 
             for (int c = 0; c < m[0].length; c++)
                 System.out.printf("%3d ", m[f][c]);
@@ -37,6 +42,14 @@ public class EPD4 {
             System.out.println("},");
         }
         System.out.println("]");
+    }
+
+    private static void imprimirCSV(String titulo, List<Fila> filas) {
+        System.out.println(titulo);
+        System.out.println("Size,TiempoIterativo,TiempoRecursivo");
+
+        for (Fila f : filas)
+            System.out.printf("%s, %.4f, %.4f", f.size(), f.tiempoIterativo(), f.tiempoRecursivo());
     }
 
     /**
@@ -94,22 +107,21 @@ public class EPD4 {
         return res;
     }
 
-    private static void medirIT(int m, int n, int p) {
-        try {
-            double t = calcularMediaTiempoIT(m, n, p);
-            System.out.printf("%dx%d * %dx%d,%.4f%n", m, n, n, p, t);
-        } catch (StackOverflowError e) {
-            System.out.printf("%dx%d * %dx%d,error%n", m, n, n, p);
-        }
-    }
+    /**
+     * Mide el tiempo en calcular dos matrices AxB * BxC
+     */
+    private static Fila medir(int a, int b, int c) {
+        String size = String.format("%dx%d * %dx%d", a, b, b, c); // AxB * BxC
 
-    private static void medirRec(int m, int n, int p) {
+        double it = calcularMediaTiempoIT(a, b, c);
+        double rec;
         try {
-            double t = calcularMediaTiempoRec(m, n, p);
-            System.out.printf("%dx%d * %dx%d,%.4f%n", m, n, n, p, t);
+            rec = calcularMediaTiempoRec(a, b, c);
         } catch (StackOverflowError e) {
-            System.out.printf("%dx%d * %dx%d,error%n", m, n, n, p);
+            rec = Double.NaN;
         }
+
+        return new Fila(size, it, rec);
     }
 
     // -------------------------------- [ METODOS AYUDA ] ----------------------------------------
@@ -154,8 +166,8 @@ public class EPD4 {
     public static int[][] multiplicarMatricesREC(int[][] a, int[][] b) {
         if (a[0].length != b.length)
             throw new IllegalArgumentException("A debe tener el mismo numero de columnas que filas B");
-        int[][] matriz = new int[a.length][b[0].length];
 
+        int[][] matriz = new int[a.length][b[0].length];
         p_multiplicarMatricesREC(matriz, a, b, transpuesta(b), 0, 0, 0);
 
         return matriz;
@@ -170,6 +182,7 @@ public class EPD4 {
      * @param bT Matriz B traspuesta
      * @param f  Fila
      * @param c  Columna
+     * @param k  Indice actual de la suma
      */
     private static void p_multiplicarMatricesREC(int[][] m, int[][] a, int[][] b, int[][] bT, int f, int c, int k) {
         // Si nos quedamos sin filas, terminamos
@@ -181,6 +194,7 @@ public class EPD4 {
             return;
         }
 
+        // Si nos quedamos sin numeros, pasamos a la siguiente columna
         if (k >= b.length) {
             p_multiplicarMatricesREC(m, a, b, bT, f, c + 1, 0);
             return;
@@ -191,6 +205,84 @@ public class EPD4 {
 
         // Calcular siguiente elemento
         p_multiplicarMatricesREC(m, a, b, bT, f, c, k + 1);
+    }
+
+    /**
+     * Multiplica dos matrices ( Sin StackOverflow por ahora :] )
+     *
+     * @param a Matriz A
+     * @param b Matriz B
+     * @return A x B
+     */
+    public static int[][] multiplicarMatricesRECv2(int[][] a, int[][] b) {
+        if (a[0].length != b.length)
+            throw new IllegalArgumentException("A debe tener el mismo numero de columnas que filas B");
+
+        int[][] matriz = new int[a.length][b[0].length];
+        f1(matriz, a, transpuesta(b), 0, 0);
+
+        return matriz;
+    }
+
+    /**
+     * Divide la matriz en filas
+     *
+     * @param m  Puntero a la matriz resultado
+     * @param a  Matriz A
+     * @param bT Matriz B traspuesta
+     * @param f  Fila
+     * @param c  Columna
+     */
+    private static void f1(int[][] m, int[][] a, int[][] bT, int f, int c) {
+        // Si nos quedamos sin filas terminamos
+        if (f >= a.length) return;
+
+        // Calcular esta fila
+        f2(m, a[f], bT, f, c);
+
+        // Pasar a la siguiente
+        f1(m, a, bT, f + 1, c);
+    }
+
+    /**
+     * Divide filas en columnas
+     *
+     * @param m  Puntero a la matriz resultado
+     * @param a  Matriz A
+     * @param bT Matriz B traspuesta
+     * @param f  Fila
+     * @param c  Columna
+     */
+    private static void f2(int[][] m, int[] a, int[][] bT, int f, int c) {
+        // Si nos quedamos sin columnas terminamos
+        if (c >= bT.length) return;
+
+        // Rellenar la celda de esta columna
+        f3(m, a, bT, f, c, 0);
+
+        // Pasar a la siguiente columna
+        f2(m, a, bT, f, c + 1);
+    }
+
+    /**
+     * Rellena las columnas de una fila
+     *
+     * @param m  Puntero a la matriz resultado
+     * @param a  Matriz A
+     * @param bT Matriz B traspuesta
+     * @param f  Fila
+     * @param c  Columna
+     * @param k  Indice actual de la suma
+     */
+    private static void f3(int[][] m, int[] a, int[][] bT, int f, int c, int k) {
+        // Si nos quedamos sun numeros, terminamos
+        if (k >= bT[0].length) return;
+
+        // Calcular celda actual
+        m[f][c] += a[k] * bT[c][k];
+
+        // Siguiente celda
+        f3(m, a, bT, f, c, k + 1);
     }
 
     // ----------------------------- [ MULTIPLICAR MATRICES ] ------------------------------------
@@ -244,7 +336,7 @@ public class EPD4 {
 
             long init = System.nanoTime();
 
-            int[][] res = multiplicarMatricesREC(x, y);
+            int[][] res = multiplicarMatricesRECv2(x, y);
 
             long end = System.nanoTime();
 
@@ -260,49 +352,36 @@ public class EPD4 {
     public static void main(String[] args) {
         // ------- [ CALENTAMIENTO ] -------
         // https://stackoverflow.com/questions/504103/how-do-i-write-a-correct-micro-benchmark-in-java
+        // Rule 1 y 5
         System.out.println("Inicio calentamiento...");
-        for (int i = 0; i < 100; i++) {
-            calcularMediaTiempoIT(128, 128, 128);
-        }
+        for (int i = 0; i < 100; i++)
+            calcularMediaTiempoIT(512, 512, 512);
+
+        for (int i = 0; i < 100; i++)
+            calcularMediaTiempoRec(512, 512, 512);
+
         System.out.println("Fin calentamiento!");
 
 
-        // ----- [ COSTES TEMPORALES IT ] -----
+        // ----- [ COSTES TEMPORALES ] -----
         int[] sizes = {16, 32, 64, 128, 256, 512, 1024, 2048};
-        String cabecera = "\nSize,Tiempo_ms";
+        String cabecera = "\nSize,TiempoIterativo,TiempoRecursivo";
 
-        // Cuadradas
-        System.out.println(cabecera);
-        for (int s : sizes) medirIT(s, s, s);
+        List<Fila> cuadradas = new ArrayList<>(sizes.length);
+        List<Fila> rectangulares = new ArrayList<>(sizes.length);
+        List<Fila> spaghetti = new ArrayList<>(sizes.length);
+        List<Fila> cuadradaRect = new ArrayList<>(sizes.length);
 
-        // Rectangulares
-        System.out.println(cabecera);
-        for (int s : sizes) medirIT(s, s / 2, s);
+        for (int s : sizes) {
+            cuadradas.add(medir(s, s, s));
+            rectangulares.add(medir(s, s / 2, s));
+            spaghetti.add(medir(s, 16, s));
+            cuadradaRect.add(medir(s, s, s * 2));
+        }
 
-        // Spaghetti
-        System.out.println(cabecera);
-        for (int s : sizes) medirIT(s, 16, s);
-
-        // Cuadrada * rectangular
-        System.out.println(cabecera);
-        for (int s : sizes) medirIT(s, s, 2 * s);
-
-
-        // ----- [ COSTES TEMPORALES REC ] -----
-        // Cuadradas
-        System.out.println(cabecera);
-        for (int s : sizes) medirRec(s, s, s);
-
-        // Rectangulares
-        System.out.println(cabecera);
-        for (int s : sizes) medirRec(s, s / 2, s);
-
-        // Spaghetti
-        System.out.println(cabecera);
-        for (int s : sizes) medirRec(s, 16, s);
-
-        // Cuadrada * rectangular
-        System.out.println(cabecera);
-        for (int s : sizes) medirRec(s, s, 2 * s);
+        imprimirCSV("Cuadradas", cuadradas);
+        imprimirCSV("Rectangulares", rectangulares);
+        imprimirCSV("Spaghetti", spaghetti);
+        imprimirCSV("Cuadrada x Rectangular", cuadradaRect);
     }
 }
